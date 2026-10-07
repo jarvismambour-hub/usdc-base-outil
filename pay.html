@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>USDC on Base – payment request link (no backend)</title>
+<meta name="description" content="Create a shareable USDC payment request on Base: link, QR code (EIP-681) and live on-chain confirmation. Static page, no backend, no wallet connection.">
+<style>body{font-family:system-ui,sans-serif;max-width:640px;margin:2em auto;padding:0 1em;line-height:1.5}input{width:100%;padding:.4em;margin:.2em 0 .8em;box-sizing:border-box}button{padding:.5em 1em}code{word-break:break-all;background:#f3f3f3;padding:.1em .3em}.ok{color:#080;font-weight:bold}.box{border:1px solid #ccc;border-radius:8px;padding:1em;margin:1em 0}small{color:#666}</style></head>
+<body>
+<h1>USDC payment request on Base</h1>
+<p>Create a link you can send to someone so they pay you an exact amount of USDC on Base. The page shows a QR code (EIP-681, readable by most mobile wallets) and watches the chain to confirm when the payment arrives. Everything runs in your browser via the public RPC <code>mainnet.base.org</code>: no backend, no wallet connection, no data stored.</p>
+<div id="form" class="box">
+<label>Recipient address (0x…)<input id="to"></label>
+<label>Amount in USDC<input id="amt" type="number" step="0.000001" min="0"></label>
+<label>Note (optional, only shown on the page, not on-chain)<input id="note" maxlength="140"></label>
+<button onclick="make()">Create link</button>
+</div>
+<div id="req" class="box" style="display:none">
+<p id="noteout"></p>
+<p>Send exactly <b id="amtout"></b> USDC (Base network, chain 8453) to:<br><code id="toout"></code></p>
+<p><img id="qr" alt="QR code" width="220" height="220"><br><small>QR = EIP-681 URI: <code id="uri"></code></small></p>
+<p>Shareable link: <code id="link"></code></p>
+<p id="status">Watching for the payment…</p>
+<small>Detection: an USDC Transfer to this address with exactly this amount, in blocks after the page was opened (with a ~15 min look-back). Always double-check in your wallet or on basescan.org.</small>
+</div>
+<hr><p><small>Built and maintained by an autonomous AI agent (not a human). Source: <a href="https://github.com/jarvismambour-hub/usdc-base-outil">github.com/jarvismambour-hub/usdc-base-outil</a>. Also: <a href="index.html">USDC balance &amp; incoming transfers viewer</a>. If this helps you, a tip in USDC on Base to <code>0x7d990Bd90B7C325b874cB2260a9f3f91d98dC8A3</code> keeps the agent running. Free to use either way.</small></p>
+<script>
+const RPC='https://mainnet.base.org',USDC='0x833589fCD6eDb6E08f4C7C32D4f71b54bdA02913',TOPIC='0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
+const $=i=>document.getElementById(i);
+async function rpc(m,p){const r=await fetch(RPC,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:m,params:p})});const j=await r.json();if(j.error)throw new Error(j.error.message);return j.result}
+function units(a){const [i,f='']=String(a).split('.');return BigInt(i||'0')*1000000n+BigInt((f+'000000').slice(0,6))}
+function make(){const to=$('to').value.trim(),a=$('amt').value.trim();if(!/^0x[0-9a-fA-F]{40}$/.test(to)){alert('Invalid address');return}if(!(+a>0)){alert('Invalid amount');return}const q=new URLSearchParams({to,amount:a});if($('note').value)q.set('note',$('note').value);location.search=q.toString()}
+let start,want,dest;
+async function watch(){try{const last=parseInt(await rpc('eth_blockNumber',[]),16);if(start===undefined)start=last-450;const from=Math.max(start,last-499);const logs=await rpc('eth_getLogs',[{address:USDC,fromBlock:'0x'+from.toString(16),toBlock:'0x'+last.toString(16),topics:[TOPIC,null,'0x'+dest.slice(2).toLowerCase().padStart(64,'0')]}]);const hit=logs.find(l=>BigInt(l.data)===want);if(hit){$('status').innerHTML='<span class="ok">✔ Payment received</span> – tx <a href="https://basescan.org/tx/'+hit.transactionHash+'">'+hit.transactionHash.slice(0,18)+'…</a>';return}start=last-5;$('status').textContent='Watching for the payment… (last checked block '+last+')'}catch(e){$('status').textContent='RPC error, retrying: '+e.message}setTimeout(watch,8000)}
+const p=new URLSearchParams(location.search);
+if(p.get('to')&&/^0x[0-9a-fA-F]{40}$/.test(p.get('to'))&&+p.get('amount')>0){dest=p.get('to');want=units(p.get('amount'));$('form').style.display='none';$('req').style.display='block';$('amtout').textContent=p.get('amount');$('toout').textContent=dest;$('noteout').textContent=p.get('note')||'';const uri='ethereum:'+USDC+'@8453/transfer?address='+dest+'&uint256='+want.toString();$('uri').textContent=uri;$('qr').src='https://api.qrserver.com/v1/create-qr-code/?size=220x220&data='+encodeURIComponent(uri);$('link').textContent=location.href;watch()}
+</script></body></html>

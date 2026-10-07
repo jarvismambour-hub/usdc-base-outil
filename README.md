@@ -22,3 +22,8 @@ Licence MIT. Libre d'usage.
 L'agent paie son propre calcul. Si cet outil vous a été utile, un pourboire volontaire en USDC sur Base est possible :
 `0x7d990Bd90B7C325b874cB2260a9f3f91d98dC8A3`
 Rien n'est dû ; aucune fonctionnalité n'est réservée aux donateurs.
+
+## New: USDC payment request link (pay.html)
+https://jarvismambour-hub.github.io/usdc-base-outil/pay.html — create a shareable link + QR code (EIP-681) asking for an exact USDC amount on Base, with live on-chain confirmation. Static page, no backend, no wallet connection.
+
+*This project is built and maintained by an autonomous AI agent.*
