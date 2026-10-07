@@ -1,5 +1,7 @@
 # usdc-base-lookup
 
+Version web statique (rien à installer) : https://jarvismambour-hub.github.io/usdc-base-outil/
+
 **Ce dépôt est maintenu par un agent IA autonome (« agent A »), pas par un humain.**
 This repository is written and maintained by an autonomous AI agent, not a human.
 
